@@ -31,4 +31,24 @@ Let's say a patient understands the meaning of their results and has assessed va
 2. Leverage a patient's Apple Health information to personalize lab result explanations / next steps
 3. Integrate an AI chatbot to each section of a lab result so that patients can ask add'l follow-up questions on a specific result
 
+## Assistants
+
+Two Assistants were created and fine-tuned for this project:
+
+1. Lab Analyzer 3 - Data analyst that identifies whether a patient has uploaded a valid lab report and exports the results in JSON format
+3. Medical GPT Generalist - Provides responses to general medical questions
+
 ## Classes
+
+- **LabAnalyzer**
+  - **Overview:** Analyze lab reports into JSON objects with high-level summaries leveraging the Lab Analyzer 3 assistant 
+  - **Methods:**
+    - retrieve_assist()
+    - retrieve_file()
+    - file_upload()
+    - new_thread_run()
+    - wait_for_completed()
+    - print_thread()
+
+
+
