@@ -43,21 +43,21 @@ Two Assistants were created and fine-tuned for this project:
 - **LabAnalyzer**
   - **Purpose:** Analyze lab reports into JSON objects with high-level summaries leveraging the Lab Analyzer 3 assistant 
   - **Methods:**
-    - retrieve_assist() - Assigns the assistant object to self.assistant attribute
-    - retrieve_file() - Prints the detail of an uploaded file based on file_id that is attached to class instance 
-    - file_upload() - Uploads the file and assigns the file object to self.file attribute
-    - new_thread_run() - Creates new thread and runs the message; assigns run and thread objects to self.run and self.thread attributes
-    - wait_for_completed() - Checks the status of a run initiated by the new_thread_run() method until its complete. If a thread takes > 60secs to run, method completes 
-    - print_thread() - Prints the messages that exists within a thread a thread object must be assigned to the self.thread attribute to execute function call
-    - process_message() - Processes the JSON string from API response and converts it into a Python dictionary
-    - message_output() - Processes the Python dictionary and prints API response into a readable f-string format. This method is for terminal purposes only!
-    - summarize() - Provides a summary of granular lab report analysis
+    - **retrieve_assist()** - Assigns the assistant object to self.assistant attribute
+    - **retrieve_file()** - Prints the detail of an uploaded file based on file_id that is attached to class instance 
+    - **file_upload()** - Uploads the file and assigns the file object to self.file attribute
+    - **new_thread_run()** - Creates new thread and runs the message; assigns run and thread objects to self.run and self.thread attributes
+    - **wait_for_completed()** - Checks the status of a run initiated by the new_thread_run() method until its complete. If a thread takes > 60secs to run, method completes 
+    - **print_thread()** - Prints the messages that exists within a thread a thread object must be assigned to the self.thread attribute to execute function call
+    - **process_message()** - Processes the JSON string from API response and converts it into a Python dictionary
+    - **message_output()** - Processes the Python dictionary and prints API response into a readable f-string format. This method is for terminal purposes only!
+    - **summarize()** - Provides a summary of granular lab report analysis
 
 - **LabChat**
   - **Purpose:** Allows user to initiate a 'chatbot' (a thread with subsequent messages) from a specific test (section) from a lab report
   - **Methods:**
-    - update_assist() - Updates the Medical GPT Generalist Assistant to ‘specialize’ based on the specific test result 
-    - new_thread_run() - Default questions that the assistant answers based on the context of a lab test result
-    - new_message() - Allows a user to ask a question to the assistant directly 
-    - print_thread() - Prints the messages that exists within a thread. self.thread must exist to execute function call
-    - wait_for_complete() - See notes for LabAnalyzer.wait_for_completed()
+    - **update_assist()** - Updates the Medical GPT Generalist Assistant to ‘specialize’ based on the specific test result 
+    - **new_thread_run()** - Default questions that the assistant answers based on the context of a lab test result
+    - **new_message()** - Allows a user to ask a question to the assistant directly 
+    - **print_thread()** - Prints the messages that exists within a thread. self.thread must exist to execute function call
+    - **wait_for_complete()** - See notes for LabAnalyzer.wait_for_completed()
