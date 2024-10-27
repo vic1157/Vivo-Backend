@@ -56,3 +56,50 @@ class LabAnalyzer:
 		self.assistant_id = self.assistant.id
 		print(f"The {self.assistant.name} assistant has been successfully added to your class!")
 		print(f"Assistant ID: {self.assistant_id}")
+	
+	def retrieve_file(self, file_id:str):
+		'''
+			If you already have a file_id for a file that has been uploaded, you can attach the file object to self.file and self.file_id
+		'''
+		existing_file = client.files.retrieve(file_id)
+		self.file = existing_file
+		self.file_id = self.file.id
+		print(self.file.model_dump_json(indent=2))
+		print(self.file_id)
+	
+	def file_upload(self, file:str=None):
+		'''
+			Uploads the file and assigns the file object to self.file
+				1. File must be the (str) of the path relative to the directory
+				2. .pdf files must be uploaded with purpose='assistants' compared to purpose='vision' for images
+				3. If a file is already assigned to self.file and self.file_id, then these attributes will be overwritten!
+		'''
+		# Checks if a file object is attached to instance
+		if self.file:
+			print("You chose not to override the file that is attached to instance")
+
+		# Attaches new file to object - checks the file extension to understand what type of upload to execute 
+		if file.split('.')[1] in ['pdf']:
+			try:
+				file = self.client.files.create(
+					file=open(file, "rb"),
+					purpose="assistants"
+					)
+				self.file = file
+				self.file_id = self.file.id
+				print("File upload was successful!")
+				print(f"File ID: {self.file_id}")
+			except Exception:
+				print("File upload was unsuccessful. Please try again.")
+		elif file.split('.')[1] in ['jpeg', 'jpg', 'png']: 
+			try:
+				file = self.client.files.create(
+					file=open(file, "rb"),
+					purpose="vision"
+					)
+				self.file = file
+				self.file_id = self.file.id
+				print("Image upload was successful!")
+				print(f"File ID: {self.file_id}")
+			except Exception:
+				print("Image upload was unsuccessful. Please try again.")
