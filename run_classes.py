@@ -103,3 +103,117 @@ class LabAnalyzer:
 				print(f"File ID: {self.file_id}")
 			except Exception:
 				print("Image upload was unsuccessful. Please try again.")
+	
+	def new_thread_run(self):
+		'''
+			Creates new thread and runs the message; assisgns run and thread objects to respective attributes
+				Context:
+					1. A file has to be assigned to instance. If this is the case, utilize file_retrieve() or file_upload() methods to assign file object or upload file to be assigned to self.file and self.file_id. 
+					2. There are two types of runs: runs based on .pdf files or runs based on .jpeg, .png, or .jpg files - the configuration of the run will vary depending on the file extension
+
+				Overview:
+					1. A new thread will be created with a designated message added to thread.
+					2. This message will be ran against the assistant to produce a response.
+					3. This method then assigns the run and thread objects to self.run and self.thread respectively 
+					4. Now a chain reaction will occur if the run is successful: wait_for_completed(), process_message(), message_output()
+						a) wait_for_completed() - will check every 5 seconds if run is complete. This loop will continue for 60secs.
+						b) process_message() - The response given by the assistant will be in JSON format - this method processes the JSON into Python dictionaries. 
+						c) message_output() - Processes the Python dictionaries into palatable f-stirngs
+		'''
+		if not self.file and not self.file_id:
+			return print("You need to upload a file via file_upload() method")
+		
+		if self.file.purpose == 'assistants':
+			try:
+				run_thread = self.client.beta.threads.create_and_run(
+					assistant_id=self.assistant_id,
+					thread={
+						"messages": [
+						{"role": "user", "content": "Breakdown the lab report attached to this message into the 'lab_output' schema that is defined in the instructions of the assistant. Do not return the original schema in the final response. Begin the output of the result with the string 'EXTRACTED DATA:'. Be sure to capture every test that is documented in the report. A test will be in a column marked as 'analyte', 'test' or 'result'. Ensure that the response that you return can be processed by the json.dumps() method. The 'testConclusion' attribute must be 'Low', 'Normal', 'High' or 'Undefined' based on the reference interval.", "attachments":[{
+						"file_id": self.file_id,
+						"tools": [{"type": "file_search"}]} ]}
+							]
+						}
+					)
+				self.thread = client.beta.threads.retrieve(run_thread.thread_id)
+				self.thread_id = self.thread.id
+				print("Waiting for lab analysis to complete...")
+				self.wait_for_completed(run_thread.id)
+				self.print_thread(report=True)
+			except Exception:
+				print("Waiting for lab analysis to complete...")
+		elif self.file.purpose == 'vision':
+			try:
+				run_thread = client.beta.threads.create_and_run(
+					assistant_id=self.assistant_id,
+					thread={
+						"messages": [
+							{
+								"role": "user",
+								"content": [
+									{
+										"type": "text",
+										"text": "Breakdown the lab report attached to this message into the 'lab_output' schema that is defined in the instructions of the assistant. Do not return the original schema in the final response. Begin the output of the result with the string 'EXTRACTED DATA:'. Be sure to capture every test that is documented in the report. A test will be in a column marked as 'analyte', 'test' or 'result'. Ensure that the response that you return can be processed by the json.dumps() method. The 'testConclusion' attribute must be 'Low', 'Normal', 'High' or 'Undefined' based on the reference interval."
+									},
+									{
+										"type": "image_file",
+										"image_file": {
+											"file_id": self.file_id,
+											"detail": 'high'
+										}
+									}
+								]
+							}
+						]
+					}
+				)
+				self.thread = self.client.beta.threads.retrieve(run_thread.thread_id)
+				self.thread_id = self.thread.id
+				self.run = client.beta.threads.runs.retrieve(
+					thread_id=self.thread.id,
+					run_id=run_thread.id
+					)
+				print("Waiting for lab analysis to complete...")
+				self.wait_for_completed(run_thread.id)
+				self.print_thread(report=True)
+			except Exception:
+				print("There was an error in executing this run!")
+	
+	def wait_for_completed(self, run_id, report:bool=False, summary:bool=False):
+		'''
+			Executed via the new_thread_run() method. 
+				1. Retrieves the status of the run object every 5 seconds (until 60 secs) to confirm that its complete
+					1a. If the run is never completed, then the run_id and thread_id will be printed to reference later
+				2. If run.status is 'complete', then the message will be printed 
+					2a. Message will be printed by processing the JSON objects into Python dictionaries  from the Assistants response via process_message()
+					2b. Python dictionary will then be processed via message_output()
+				3. If you're analyzing lab report, API response has to be processed. If you're getting summary, API response does not need to be processed.
+		'''
+		if self.thread:
+			count = 0
+			while True:
+				# Retrieves the run object every 5 seconds to confirm its current status
+				time.sleep(5)
+				self.run = client.beta.threads.runs.retrieve(
+					thread_id=self.thread.id,
+					run_id=run_id
+					)
+				if self.run.status == "completed":
+					#Logic to calculate the time it took to execute run
+					elapsed_time = self.run.completed_at - self.run.created_at
+					formatted_elapsed_time = time.strftime(
+						":%H:%M:%S", time.gmtime(elapsed_time)
+					)
+					print(f"Run completed in {formatted_elapsed_time}")
+					logging.info(f"Run completed in {formatted_elapsed_time}")
+					print('Your the run has completed!')
+					break
+				else:
+					count += 1
+					#Loops through while loop for a minute
+					if count == 24:
+						print(self.run.id)
+						print(self.thread.id)
+						break
+		else:
+			return print("Check if you have valid thread and run objects")
