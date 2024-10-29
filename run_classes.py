@@ -4,6 +4,7 @@ import openai
 import json
 import time
 import re
+import logging
 
 load_dotenv()
 model = "gpt-4o"
@@ -217,3 +218,48 @@ class LabAnalyzer:
 						break
 		else:
 			return print("Check if you have valid thread and run objects")
+	
+	def print_thread(self,report:bool=False, summary:bool=False):
+		'''
+			Prints the messages that exists within a thread. self.thread must exist to execute function call.
+		'''
+
+		if self.thread and report:
+			#Logic to print
+			print('Printing report...')
+			thread_messages = client.beta.threads.messages.list(self.thread.id)
+			message = thread_messages.data[0].content[0].text.value
+			#json_objects will be used for backend
+			json_objects = self.process_message(message)
+			#message_output() is for terminal view in Python
+			print(self.message_output(json_objects))
+			return print('Lab report complete!')
+
+		if self.thread and summary:
+			print('Printing summary..')
+			thread_messages = client.beta.threads.messages.list(self.thread.id)
+			print(thread_messages.data[1].content[0].text.value)
+			print(thread_messages.data[0].content[0].text.value)
+			return print('Summary Complete')
+	
+	def process_message(self, input_string:str) -> list:
+		'''
+			Processes the JSON string from API response and converts it into a Python dictionary
+		'''
+		# Remove the unnecessary parts
+		cleaned_string = re.sub(r'^EXTRACTED DATA:\s*```json\s*\[\s*', '', input_string)
+		cleaned_string = re.sub(r'\s*\]\s*```\s*$', '', cleaned_string)
+		
+		# Find all JSON objects
+		json_objects = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', cleaned_string)
+		
+		# Parse each JSON object
+		parsed_objects = []
+		for obj in json_objects:
+			try:
+				parsed_obj = json.loads(obj)
+				parsed_objects.append(parsed_obj)
+			except json.JSONDecodeError:
+				print(f"Error parsing JSON object: {obj}")
+		
+		return parsed_objects
