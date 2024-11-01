@@ -325,3 +325,42 @@ class LabAnalyzer:
 		print("Generating summary...")
 		self.wait_for_completed(self.run.id)
 		self.print_thread(summary=True)
+
+class LabChat:
+	'''
+		Use Case #2
+
+		1. Class - LabChat
+		2. Purpose - Allows user to initiate a 'chatbot' (a thread with subsequent messages) from a specific test from a lab report
+		3. Assistant - Medical GPT Generalist (added by default)
+			3a. Assistant will be updated with an summary of the test result to have context on its 'temporary' expertise
+		4. Thread: N/A - A new thread will be created to initate the chatbot; subsequent messages will be added to the existing thread for further follow-up questions and responses 
+
+		Use Case #3: To continue a chat from an existing thread, you will need to grab the LabChat() instance, load the thread via print_thread() [optional] and execute new_message() to continue a chat from an existing thread from a lab test result 
+
+		Potential feature? - Have GPT ask common questions so users are met with responses in the thread - implemented
+	'''
+
+	def __init__(self, model:str=model, client=client) -> None:
+		self.client = client
+		self.model = model
+		self.assistant = None
+		self.thread = None
+		self.run = None
+		
+	thread_id = None
+	file_id = None
+	assistant_id = mgeneralist_assist_id
+
+def update_assist(self, context):
+		'''
+			Updates the Medical GPT Generalist Assistant to a specific 'domain' based on test results
+				1. Updates the instruction of the assistant to reflect the summary of the results
+		'''
+		my_updated_assistant = client.beta.assistants.update(
+			assistant_id=self.assistant_id,
+			instructions=f"You will provide responses to messages in a thread based on bloodwork results. The context of the specific bloodwork results are here: {context}. It is possible that you will be asked questions outside of this domain, if so, remind the user that this chat specifically for the context provided. If they insist, then you can still answer them, disregarding your specialization. Keep in mind, that your responses short be short and succinct. If a user wants additional information, they will ask further questions where you can elaborate further."
+			)
+		self.assistant = my_updated_assistant
+		print("Your assistant has been modified! The results are below:")
+		print(self.assistant.model_dump_json(indent=2))
