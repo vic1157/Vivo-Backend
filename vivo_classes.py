@@ -352,7 +352,7 @@ class LabChat:
 	file_id = None
 	assistant_id = mgeneralist_assist_id
 
-def update_assist(self, context):
+	def update_assist(self, context):
 		'''
 			Updates the Medical GPT Generalist Assistant to a specific 'domain' based on test results
 				1. Updates the instruction of the assistant to reflect the summary of the results
@@ -364,3 +364,67 @@ def update_assist(self, context):
 		self.assistant = my_updated_assistant
 		print("Your assistant has been modified! The results are below:")
 		print(self.assistant.model_dump_json(indent=2))
+	
+	def new_thread_run(self):
+		'''
+			This method will be used to run 'general' questions by default to the assistant based on the context of a lab test result. These questions include:
+				1. What can I do to improve these results, if necessary? 
+				2. Is there additional context that you can provide to help me understand these results better?
+			
+			Overview:
+				** You must run update_assist() prior to this method to ensure the instructions within the assistant is updated! **
+				1. A new thread will be created with 3 messages - these messages will be added to the thread and ran to get the assistant's response. 
+				2. self.thread and self.run will be updated to relect the new thread and to capture the run object. The LASTEST run executed will be assigned to self.run
+				3. wait_for_completed() will be executed to wait until run completed for an assistant response.
+		'''
+		try:
+			# You want to add the messages to the thread one by one
+			self.thread = client.beta.threads.create()
+			self.thread_id = self.thread.id
+			content = ["What can I do to improve these results, if necessary?", "Is there additional context that you can provide to help me understand these results better?"]
+			
+			# Loop through the content array to run assistant for each question 
+			for message in content:
+				client.beta.threads.messages.create(
+				thread_id=self.thread.id,
+				role="user",
+				content=message,
+				)
+
+				self.run = client.beta.threads.runs.create(
+					thread_id=self.thread_id,
+					assistant_id=self.assistant_id
+					)
+				print("Waiting for assistant to respond to question(s)...")
+				self.wait_for_complete(self.run.id)
+			print("Questions are complete!")
+			self.wait_for_complete(self.run.id, run_complete=True)
+		except Exception:
+			print('There was an error in executing this run')
+	
+	def new_message(self, message:str):
+		'''
+			new_message() allows a user to ask a question to the Medical GPT Generalist assistant that has context on their lab results
+				1. A new message will be created
+				2. The message will be added to an existing thread and then a run will begin
+		'''
+		if self.thread:
+			client.beta.threads.messages.create(
+				thread_id=self.thread.id,
+				role="user",
+				content=message,
+				)
+			self.run = client.beta.threads.runs.create(
+						thread_id=self.thread_id,
+						assistant_id=self.assistant_id
+						)
+			print("Waiting for assistant to respond to new question...")
+			self.wait_for_complete(self.run.id)
+			print('Question Complete!')
+			print()
+			thread_messages = client.beta.threads.messages.list(self.thread_id)
+			new_response = thread_messages.data[0].content[0].text.value
+			new_message = thread_messages.data[1].content[0].text.value
+			print(new_message)
+			print()
+			print(new_response)
