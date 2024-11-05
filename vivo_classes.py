@@ -428,3 +428,56 @@ class LabChat:
 			print(new_message)
 			print()
 			print(new_response)
+	
+	def print_thread(self):
+		'''
+			Prints the messages that exists within a thread. self.thread must exist to execute function call.
+		'''
+		if self.thread:
+			thread_messages = client.beta.threads.messages.list(self.thread.id)
+			for message in thread_messages.data[::-1]:
+				print(message.content[0].text.value)
+				print()
+			return print('Thread complete!')
+	
+	def wait_for_complete(self, run_id:str=None, run_complete:bool=None):
+		'''
+			Executed via the new_thread_run() method. 
+				1. Retrieves the status of the run object every 5 seconds (until 60 secs) to confirm that its complete
+					1a. If the run is never completed, then the run_id and thread_id will be printed to reference later
+				2. If run.status is 'complete', then the message will be printed 
+					2a. Message will be printed by processing the JSON objects into Python dictionaries  from the Assistants response via process_message()
+					2b. Python dictionary will then be processed via message_output()
+				3. If you're analyzing lab report, API response has to be processed. If you're getting summary, API response does not need to be processed.
+		'''
+		if self.thread:
+			if run_complete:
+				self.print_thread()
+
+			count = 0
+			while True:
+				# Retrieves the run object every 5 seconds to confirm its current status
+				time.sleep(5)
+				self.run = client.beta.threads.runs.retrieve(
+					thread_id=self.thread.id,
+					run_id=run_id
+					)
+				if self.run.status == "completed":
+					#Logic to calculate the time it took to execute run
+					elapsed_time = self.run.completed_at - self.run.created_at
+					formatted_elapsed_time = time.strftime(
+						":%H:%M:%S", time.gmtime(elapsed_time)
+					)
+					print(f"Run completed in {formatted_elapsed_time}")
+					logging.info(f"Run completed in {formatted_elapsed_time}")
+					print('Your run has completed!')	
+					break
+				else:
+					count += 1
+					#Loops through while loop for a minute
+					if count == 24:
+						print(self.run.id)
+						print(self.thread.id)
+						break
+		else:
+			return print("Check if you have valid thread and run objects")
