@@ -481,3 +481,38 @@ class LabChat:
 						break
 		else:
 			return print("Check if you have valid thread and run objects")
+
+class newChat:
+	'''
+		Use Case #4
+
+		1. Class - newChat
+		2. Purpose - Allows user to initiate a 'chatbot' (a thread with subsequent messages) from the 'chats' page - this serves as a general purpose chat where the assistant is not specialized based on lab test results 
+		3. Assistant - Medical GPT Generalist (added by default)
+			3a. Assistant will be updated with general instructions vs. specialization from a specific lab test
+		4. Thread: N/A - A new thread will be created to initate the chatbot; subsequent messages will be added to the existing thread for further follow-up questions and responses 
+	'''
+
+	def __init__(self, model:str=model, client=client) -> None:
+		self.client = client
+		self.model = model
+		self.assistant = None
+		self.thread = None
+		self.run = None
+		
+
+	thread_id = None
+	file_id = None
+	assistant_id = mgeneralist_assist_id
+
+	def update_assist(self):
+		'''
+			Updates the Medical GPT Generalist Assistant to be a 'generalist' where there is not a specialization based on lab test results
+		'''
+		my_updated_assistant = client.beta.assistants.update(
+			assistant_id=self.assistant_id,
+			instructions="You will provide responses to users who will be asking general medical questions. Keep in mind, that your responses short be short and succinct. If a user wants additional information, they will ask further questions where you can elaborate further."
+			)
+		self.assistant = my_updated_assistant
+		print("Your assistant has been modified! The results are below:")
+		print(self.assistant.model_dump_json(indent=2))
